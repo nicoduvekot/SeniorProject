@@ -1,11 +1,31 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_flow_showcase/src/widgets/status_indicators.dart';
+import '../models/document_status.dart';
 import '../services/document_service.dart';
 import '../widgets/create_document_dialog.dart';
 import 'document_editor_page.dart';
 
 class DocumentsHomePage extends StatelessWidget {
   const DocumentsHomePage({super.key});
+
+  DocumentStatus getStatusForDoc(QueryDocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+
+    if (doc.metadata.hasPendingWrites) {
+      return DocumentStatus.syncing;
+    }
+
+    final hasName = data['name'] != null && data['name'].toString().isNotEmpty;
+    final hasContent = data['content'] != null && data['content'].toString().isNotEmpty;
+
+    final isComplete = hasName && hasContent;
+
+    return isComplete
+        ? DocumentStatus.complete
+        : DocumentStatus.incomplete;
+  }
   
   @override 
   Widget build(BuildContext context) {
@@ -53,6 +73,7 @@ class DocumentsHomePage extends StatelessWidget {
             return ListView(
               children: docs.map((d) {
                 return ListTile(
+                  leading: StatusIndicators(status: getStatusForDoc(d)),
                   title: Text(d['name']),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () {

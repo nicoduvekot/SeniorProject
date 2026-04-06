@@ -67,7 +67,7 @@ class _SignInPageState extends State<SignInPage> {
                   height: 20,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-                : const Text("Sing in"),
+                : const Text("Sign in"),
             ),
 
             TextButton(
