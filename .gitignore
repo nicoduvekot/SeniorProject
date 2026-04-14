@@ -106,6 +106,7 @@ output-metadata.json
 
 # Google Services (safe to commit for client apps)
 google-services.json
+.flutter-plugins-dependencies
 
 ############################################
 # iOS / Xcode
