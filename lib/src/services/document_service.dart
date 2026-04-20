@@ -42,8 +42,8 @@ class DocumentService {
 
       'start': '',
       'driver': '',
-      'suspension': '',
-      'aero': '',
+      'suspension': 'COMPRESSION',
+      'aero': 'SPLINTERANGLE',
 
       'coldLF': '',
       'coldRF': '',

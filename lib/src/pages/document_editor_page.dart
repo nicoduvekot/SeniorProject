@@ -4,13 +4,28 @@ import 'package:flutter/services.dart'; //used for input filtering
 
 //enums for suspension values for dropdown
 enum suspension{
-  COMPRESSSION("Compression"),
+  COMPRESSION("Compression"),
   REBOUND("Rebound"),
   SWAYBAR("Sway Bar");
 
   final String label;
 
   const suspension(this.label);
+}
+
+//created controller for the enums
+class SuspensionController extends ChangeNotifier {
+  suspension _selectedSus = suspension.COMPRESSION;
+
+  suspension get selectedSus => _selectedSus;
+
+  void updateRole(suspension sus) {
+    _selectedSus = sus;
+    notifyListeners(); // Notify UI to update
+
+    // Simply store the enum object.
+    print('Selected ID: ${_selectedSus.label}');
+  }
 }
 
 //enums to set the aero values for dropdown
@@ -21,6 +36,21 @@ enum aero{
   final String label;
 
   const aero(this.label);
+}
+
+//created controller for aero enums
+class AeroController extends ChangeNotifier {
+  aero _selectedAero = aero.SPLINTERANGLE;
+
+  aero get selectedAero => _selectedAero;
+
+  void updateRole(aero a) {
+    _selectedAero = a;
+    notifyListeners(); // Notify UI to update
+
+    // Simply store the enum object.
+    print('Selected ID: ${_selectedAero.label}');
+  }
 }
 
 class DocumentEditorPage extends StatefulWidget {
@@ -44,8 +74,8 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
   //pre value fields
   final startController = TextEditingController();
   final driverController = TextEditingController();
-  var suspensionController = TextEditingController(); //this and the following are vars as they are instantiated later.
-  var aeroController = TextEditingController();
+  var suspensionController = SuspensionController(); //this is a class controller set to this enum type
+  var aeroController = AeroController();             //this is a class controller set to this enum type
 
   //cold Tire Values
   final coldLFController = TextEditingController();
@@ -91,15 +121,19 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
     weatherController.text = snap['weather'] ?? '';
     dateController.text = snap['date'] ?? '';
 
-    coldLFController.text = snap['coldLF'];
-    coldRFController.text = snap['coldRF'];
-    coldLRController.text = snap['coldLR'];
-    coldRRController.text = snap['coldRR'];
+    coldLFController.text = snap['coldLF'] ?? '';
+    coldRFController.text = snap['coldRF'] ?? '';
+    coldLRController.text = snap['coldLR'] ?? '';
+    coldRRController.text = snap['coldRR'] ?? '';
 
     startController.text = snap['start'] ?? '';
     driverController.text = snap['driver'] ?? '';
-    suspensionController.text = snap['suspension'] ?? '';
-    aeroController.text = snap['aero'] ?? '';
+
+    //setting up the suspensionController
+    suspensionController.updateRole(suspension.values.byName(snap['suspension']));
+
+    //setting up the aeroController
+    aeroController.updateRole(aero.values.byName(snap['aero']));
 
     notesController.text = snap['notes'];
     durationController.text = snap['duration'] ?? '';
@@ -133,8 +167,8 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
 
       'start': startController.text, //no trimming due to cannot be typical input
       'driver': driverController.text.trim(),
-      'suspension': suspensionController.text, //no trimming due to cannot be manual input
-      'aero': aeroController.text, //no trimming due to cannot be typical input
+      'suspension': suspensionController.selectedSus.name,
+      'aero': aeroController.selectedAero.name, //no trimming due to cannot be typical input
 
       'coldLF': coldLFController.text.trim(),
       'coldRF': coldRFController.text.trim(),
@@ -164,10 +198,6 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
         body: Center(child: CircularProgressIndicator()),
       );
     }
-
-    //two values for inputs later with enums
-    suspension? SusType;
-    aero? aeroType;
 
     return Scaffold(
       appBar: AppBar(title: const Text("Edit Document")),
@@ -260,13 +290,20 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
                   context: context,
                   initialTime: TimeOfDay.now(),
                 );
+
+                if (picked != null) {
+                  final formatted = picked.format(context);
+                  setState(() {
+                    startController.text = formatted;        //Stores the context string
+                  });
+                }
               },
             ),
             const SizedBox(height: 16),
 
             //suspension settings
             DropdownButtonFormField<suspension>(
-              value: SusType,
+              value: suspensionController.selectedSus,
               decoration: const InputDecoration(
                 labelText: "Suspension Type",
                 border: OutlineInputBorder(),
@@ -278,17 +315,17 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
                 );
               }).toList(),
               onChanged: (value) {
-                setState(() {
-                  SusType = value;
-                  suspensionController.text = value!.name;
-                });
+                if (value != null) {
+                  suspensionController.updateRole(value);  // update controller
+                  setState(() {});                         // refresh UI
+                }
               },
             ),
             const SizedBox(height: 16),
 
             //aero settings
             DropdownButtonFormField<aero>(
-              value: aeroType,
+              value: aeroController.selectedAero,
               decoration: const InputDecoration(
                 labelText: "Aero Type",
                 border: OutlineInputBorder(),
@@ -300,10 +337,10 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
                 );
               }).toList(),
               onChanged: (value) {
-                setState(() {
-                  aeroType = value;
-                  aeroController.text = value!.name;
-                });
+                if (value != null) {
+                  aeroController.updateRole(value);
+                  setState(() {});
+                }
               },
             ),
             const SizedBox(height: 16),
@@ -325,40 +362,44 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
                 children: [
                   //interior children for inputs
                   TextField(
+                      controller: coldLFController,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       inputFormatters: [
                         // Allows digits and only one dot
                         FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
                       ],
 
-                      decoration: InputDecoration(labelText: "Left Front")
+                      decoration: InputDecoration(labelText: "Left Front", border: OutlineInputBorder(),)
                   ),
                   TextField(
+                      controller: coldRFController,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       inputFormatters: [
                         // Allows digits and only one dot
                         FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
                       ],
 
-                      decoration: InputDecoration(labelText: "Right Front")
+                      decoration: InputDecoration(labelText: "Right Front", border: OutlineInputBorder(),)
                   ),
                   TextField(
+                      controller: coldLRController,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       inputFormatters: [
                         // Allows digits and only one dot
                         FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
                       ],
 
-                      decoration: InputDecoration(labelText: "Left Rear")
+                      decoration: InputDecoration(labelText: "Left Rear", border: OutlineInputBorder(),)
                   ),
                   TextField(
+                      controller: coldRRController,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       inputFormatters: [
                         // Allows digits and only one dot
                         FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
                       ],
 
-                      decoration: InputDecoration(labelText: "Right Rear")
+                      decoration: InputDecoration(labelText: "Right Rear", border: OutlineInputBorder(),)
                   ),
                 ],
               ),
@@ -382,18 +423,14 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
                   context: context,
                   initialTime: TimeOfDay.now(),
                 );
-              },
-            ),
-            const SizedBox(height: 16),
 
-            //duration, edit this to only accept amount of time
-            TextField(
-              controller: durationController,
-              maxLines: null,
-              decoration: const InputDecoration(
-                labelText: "Duration",
-                border: OutlineInputBorder(),
-              ),
+                if (picked != null) {
+                  final formatted = picked.format(context);
+                  setState(() {
+                    endController.text = formatted;        //Stores the context string
+                  });
+                }
+              },
             ),
             const SizedBox(height: 16),
 
@@ -414,40 +451,44 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
                 children: [
                   //interior boxes for inputs
                   TextField(
+                      controller: hotLFController,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       inputFormatters: [
                         // Allows digits and only one dot
                         FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
                       ],
 
-                      decoration: InputDecoration(labelText: "Left Front")
+                      decoration: InputDecoration(labelText: "Left Front", border: OutlineInputBorder(),)
                   ),
                   TextField(
+                      controller: hotRFController,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       inputFormatters: [
                         // Allows digits and only one dot
                         FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
                       ],
 
-                      decoration: InputDecoration(labelText: "Right Front")
+                      decoration: InputDecoration(labelText: "Right Front", border: OutlineInputBorder(),)
                   ),
                   TextField(
+                      controller: hotLRController,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       inputFormatters: [
                         // Allows digits and only one dot
                         FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
                       ],
 
-                      decoration: InputDecoration(labelText: "Left Rear")
+                      decoration: InputDecoration(labelText: "Left Rear", border: OutlineInputBorder(),)
                   ),
                   TextField(
+                      controller: hotRRController,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       inputFormatters: [
                         // Allows digits and only one dot
                         FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
                       ],
 
-                      decoration: InputDecoration(labelText: "Right Rear")
+                      decoration: InputDecoration(labelText: "Right Rear", border: OutlineInputBorder(),)
                   ),
                 ],
               ),
