@@ -34,7 +34,33 @@ class DocumentService {
         .collection('documents')
         .add({
       'name': name,
-      'content': '',
+
+      'track': '',
+      'car': '',
+      'weather': '',
+      'date': '',
+
+      'start': '',
+      'driver': '',
+      'suspension': '',
+      'aero': '',
+
+      'coldLF': '',
+      'coldRF': '',
+      'coldLR': '',
+      'coldRR': '',
+
+      'duration': '',
+      'end': '',
+      'notes': '',
+
+      'laps': [],
+
+      'hotLF': '',
+      'hotRF': '',
+      'hotLR': '',
+      'hotRR': '',
+
       'createdAt': FieldValue.serverTimestamp(),
     });
 
