@@ -2,6 +2,27 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart'; //used for input filtering
 
+//enums for suspension values for dropdown
+enum suspension{
+  Compression("Compression"),
+  Rebound("Rebound"),
+  Swaybar("Sway Bar");
+
+  final String label;
+
+  const suspension(this.label);
+}
+
+//enums to set the aero values for dropdown
+enum aero{
+  SplitterAngle("Splinter Angle"),
+  WingAngle("Wing Angle");
+
+  final String label;
+
+  const aero(this.label);
+}
+
 class DocumentEditorPage extends StatefulWidget {
   final DocumentReference docRef;
 
@@ -13,14 +34,23 @@ class DocumentEditorPage extends StatefulWidget {
 
 class _DocumentEditorPageState extends State<DocumentEditorPage> {
   //full set of controllers for input fields
+
+  //Original fields
   final trackController = TextEditingController();
   final carController = TextEditingController();
   final dateController = TextEditingController();
+  final weatherController = TextEditingController();
+
+  //pre value fields
   final notesController = TextEditingController();
   final startController = TextEditingController();
-  final durationController = TextEditingController();
-  final lapsController = TextEditingController();
   final driverController = TextEditingController();
+  var suspensionController = TextEditingController(); //this and the following are vars as they are instantiated later.
+  var aeroController = TextEditingController();
+
+  //post value fields
+  final lapsController = TextEditingController();
+  final durationController = TextEditingController();
   final endController = TextEditingController();
 
   bool loading = true;
@@ -60,6 +90,10 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
         body: Center(child: CircularProgressIndicator()),
       );
     }
+
+    //two values for inputs later
+    suspension? SusType;
+    aero? aeroType;
 
     return Scaffold(
       appBar: AppBar(title: const Text("Edit Document")),
@@ -112,8 +146,30 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
             ),
             const SizedBox(height: 16),
 
+            //sets up the info for the cars
+            TextField(
+              controller: weatherController,
+              maxLines: null,
+              decoration: const InputDecoration(
+                labelText: "Weather",
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+
             //pre-session information
             Text("Pre-Session"),
+            const SizedBox(height: 16),
+
+            //Driver, name text field
+            TextField(
+              controller: driverController,
+              maxLines: null,
+              decoration: const InputDecoration(
+                labelText: "Driver",
+                border: OutlineInputBorder(),
+              ),
+            ),
             const SizedBox(height: 16),
 
             //startTime, edit this to only accept times
@@ -133,13 +189,70 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
             ),
             const SizedBox(height: 16),
 
-            //duration, edit this to only accept amount of time
-            TextField(
-              controller: durationController,
-              maxLines: null,
+            //suspension settings
+            DropdownButtonFormField<suspension>(
+              value: SusType,
               decoration: const InputDecoration(
-                labelText: "Duration",
+                labelText: "Suspension Type",
                 border: OutlineInputBorder(),
+              ),
+              items: suspension.values.map((type) {
+                return DropdownMenuItem(
+                  value: type,
+                  child: Text(type.label),
+                );
+              }).toList(),
+              onChanged: (value) {
+                setState(() {
+                  SusType = value;
+                  suspensionController.text = value!.name;
+                });
+              },
+            ),
+            const SizedBox(height: 16),
+
+            //aero settings
+            DropdownButtonFormField<aero>(
+              value: aeroType,
+              decoration: const InputDecoration(
+                labelText: "Aero Type",
+                border: OutlineInputBorder(),
+              ),
+              items: aero.values.map((type) {
+                return DropdownMenuItem(
+                  value: type,
+                  child: Text(type.label),
+                );
+              }).toList(),
+              onChanged: (value) {
+                setState(() {
+                  aeroType = value;
+                  aeroController.text = value!.name;
+                });
+              },
+            ),
+            const SizedBox(height: 16),
+
+            //tire psi
+            Text("Cold Tire PSI"),
+            Container(
+              padding: EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: GridView.count(
+                crossAxisCount: 2,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                shrinkWrap: true,
+                childAspectRatio: 3,
+                children: [
+                  TextField(decoration: InputDecoration(labelText: "LF")),
+                  TextField(decoration: InputDecoration(labelText: "RF")),
+                  TextField(decoration: InputDecoration(labelText: "LR")),
+                  TextField(decoration: InputDecoration(labelText: "RR")),
+                ],
               ),
             ),
             const SizedBox(height: 16),
@@ -165,13 +278,37 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
             ),
             const SizedBox(height: 16),
 
-            //Driver, name text field
+            //duration, edit this to only accept amount of time
             TextField(
-              controller: driverController,
+              controller: durationController,
               maxLines: null,
               decoration: const InputDecoration(
-                labelText: "Driver",
+                labelText: "Duration",
                 border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            //tire psi
+            Text("Hot Tire PSI"),
+            Container(
+              padding: EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: GridView.count(
+                crossAxisCount: 2,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                shrinkWrap: true,
+                childAspectRatio: 3,
+                children: [
+                  TextField(decoration: InputDecoration(labelText: "LF")),
+                  TextField(decoration: InputDecoration(labelText: "RF")),
+                  TextField(decoration: InputDecoration(labelText: "LR")),
+                  TextField(decoration: InputDecoration(labelText: "RR")),
+                ],
               ),
             ),
             const SizedBox(height: 16),
