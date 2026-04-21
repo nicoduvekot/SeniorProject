@@ -33,33 +33,27 @@ class _SignInPageState extends State<SignInPage> {
     }
   }
 
-  //Google Sign-In Logic
+  //Google Sign In Logic
   Future<void> signInWithGoogle() async {
     setState(() => isLoading = true);
-
     try {
-      // 1. You MUST initialize the instance first in v7.x
-      await GoogleSignIn.instance.initialize();
+      // Trigger system level account picker
+      final GoogleSignInAccount? googleUser = await GoogleSignIn.instance.authenticate();
+      if (googleUser == null) return;
 
-      // 2. Use 'authenticate()' instead of 'signIn()'
-      final GoogleSignInAccount googleUser = await GoogleSignIn.instance.authenticate();
+      // Request scopes to retrieve the Access Token (for Firebase)
+      final List<String> scopes = ['email', 'profile'];
+      final clientAuth = await googleUser.authorizationClient.authorizeScopes(scopes);
 
-      // 3. Obtain authentication details (idToken is here)
-      final GoogleSignInAuthentication googleAuth = googleUser.authentication;
-
-      // 4. Create the Firebase credential
+      // Create Firebase Credential using both tokens
       final credential = GoogleAuthProvider.credential(
-        idToken: googleAuth.idToken,
-        accessToken: null,
+        idToken: googleUser.authentication.idToken,
+        accessToken: clientAuth.accessToken,
       );
 
-      // 5. Sign in to Firebase
       await FirebaseAuth.instance.signInWithCredential(credential);
-
-    } on GoogleSignInException catch (e) {
-      _showError("Sign-in error: ${e.code.name}");
     } catch (e) {
-      _showError("Something went wrong. Please try again.");
+      _showError("Sign-in failed. Check your network or console settings.");
     } finally {
       if (mounted) setState(() => isLoading = false);
     }
