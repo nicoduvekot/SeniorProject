@@ -2,57 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart'; //used for input filtering
 
-//enums for suspension values for dropdown
-enum suspension{
-  COMPRESSION("Compression"),
-  REBOUND("Rebound"),
-  SWAYBAR("Sway Bar");
-
-  final String label;
-
-  const suspension(this.label);
-}
-
-//created controller for the enums
-class SuspensionController extends ChangeNotifier {
-  suspension _selectedSus = suspension.COMPRESSION;
-
-  suspension get selectedSus => _selectedSus;
-
-  void updateRole(suspension sus) {
-    _selectedSus = sus;
-    notifyListeners(); // Notify UI to update
-
-    // Simply store the enum object.
-    print('Selected ID: ${_selectedSus.label}');
-  }
-}
-
-//enums to set the aero values for dropdown
-enum aero{
-  SPLINTERANGLE("Splinter Angle"),
-  WINGANGLE("Wing Angle");
-
-  final String label;
-
-  const aero(this.label);
-}
-
-//created controller for aero enums
-class AeroController extends ChangeNotifier {
-  aero _selectedAero = aero.SPLINTERANGLE;
-
-  aero get selectedAero => _selectedAero;
-
-  void updateRole(aero a) {
-    _selectedAero = a;
-    notifyListeners(); // Notify UI to update
-
-    // Simply store the enum object.
-    print('Selected ID: ${_selectedAero.label}');
-  }
-}
-
 class DocumentEditorPage extends StatefulWidget {
   final DocumentReference docRef;
 
@@ -74,8 +23,15 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
   //pre value fields
   final startController = TextEditingController();
   final driverController = TextEditingController();
-  var suspensionController = SuspensionController(); //this is a class controller set to this enum type
-  var aeroController = AeroController();             //this is a class controller set to this enum type
+
+  //suspension setup fields
+  final compressionController = TextEditingController();
+  final reboundController = TextEditingController();
+  final swayBarController = TextEditingController();
+
+  //Aero fields
+  final wingAngleController = TextEditingController();
+  final splitterAngleController = TextEditingController();
 
   //cold Tire Values
   final coldLFController = TextEditingController();
@@ -114,44 +70,59 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
 
   //loading document method
   Future<void> _loadDocument() async {
-    final snap = await widget.docRef.get();
+    try {
+      final snap = await widget.docRef.get();
 
-    trackController.text = snap['track'] ?? '';
-    carController.text = snap['car'] ?? '';
-    weatherController.text = snap['weather'] ?? '';
-    dateController.text = snap['date'] ?? '';
+      // Safely get data. If it's a new doc, this map might be empty.
+      final data = snap.data() as Map<String, dynamic>? ?? {};
 
-    coldLFController.text = snap['coldLF'] ?? '';
-    coldRFController.text = snap['coldRF'] ?? '';
-    coldLRController.text = snap['coldLR'] ?? '';
-    coldRRController.text = snap['coldRR'] ?? '';
+      // Standard Fields
+      trackController.text = data['track']?.toString() ?? '';
+      carController.text = data['car']?.toString() ?? '';
+      weatherController.text = data['weather']?.toString() ?? '';
+      dateController.text = data['date']?.toString() ?? '';
 
-    startController.text = snap['start'] ?? '';
-    driverController.text = snap['driver'] ?? '';
+      //Individual Suspension Fields
+      compressionController.text = data['compression']?.toString() ?? '';
+      reboundController.text = data['rebound']?.toString() ?? '';
+      swayBarController.text = data['swayBar']?.toString() ?? '';
 
-    //setting up the suspensionController
-    suspensionController.updateRole(suspension.values.byName(snap['suspension']));
+      //Individual Aero Fields
+      wingAngleController.text = data['wingAngle']?.toString() ?? '';
+      splitterAngleController.text = data['splitterAngle']?.toString() ?? '';
 
-    //setting up the aeroController
-    aeroController.updateRole(aero.values.byName(snap['aero']));
+      //Tire PSI (Cold)
+      coldLFController.text = data['coldLF']?.toString() ?? '';
+      coldRFController.text = data['coldRF']?.toString() ?? '';
+      coldLRController.text = data['coldLR']?.toString() ?? '';
+      coldRRController.text = data['coldRR']?.toString() ?? '';
 
-    notesController.text = snap['notes'];
-    durationController.text = snap['duration'] ?? '';
-    endController.text = snap['end'] ?? '';
+      //Session Data
+      startController.text = data['start']?.toString() ?? '';
+      driverController.text = data['driver']?.toString() ?? '';
+      notesController.text = data['notes']?.toString() ?? '';
+      durationController.text = data['duration']?.toString() ?? '';
+      endController.text = data['end']?.toString() ?? '';
 
-    //just for the laps setup to rebuild the lap controllers
-    lapControllers.clear(); // remove old controllers
-    final laps = List<String>.from(snap['laps']);
-    for (final lap in laps) {
-      lapControllers.add(TextEditingController(text: lap));
+      //Lap List handling
+      lapControllers.clear();
+      final laps = List<dynamic>.from(data['laps'] ?? []);
+      for (final lap in laps) {
+        lapControllers.add(TextEditingController(text: lap.toString()));
+      }
+
+      // Tire PSI (Hot)
+      hotLFController.text = data['hotLF']?.toString() ?? '';
+      hotRFController.text = data['hotRF']?.toString() ?? '';
+      hotLRController.text = data['hotLR']?.toString() ?? '';
+      hotRRController.text = data['hotRR']?.toString() ?? '';
+
+      setState(() => loading = false);
+    } catch (e) {
+      print("Error loading document: $e");
+      // Even if there's an error, stop the loading spinner
+      setState(() => loading = false);
     }
-
-    hotLFController.text = snap['hotLF'];
-    hotRFController.text = snap['hotRF'];
-    hotLRController.text = snap['hotLR'];
-    hotRRController.text = snap['hotRR'];
-
-    setState(() => loading = false);
   }
 
   //saving document method
@@ -164,11 +135,14 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
       'car': carController.text.trim(),
       'weather': weatherController.text.trim(),
       'date': dateController.text, //no trimming due to cannot be typical input
-
       'start': startController.text, //no trimming due to cannot be typical input
       'driver': driverController.text.trim(),
-      'suspension': suspensionController.selectedSus.name,
-      'aero': aeroController.selectedAero.name, //no trimming due to cannot be typical input
+
+      'compression': compressionController.text.trim(),
+      'rebound': reboundController.text.trim(),
+      'swayBar': swayBarController.text.trim(),
+      'wingAngle': wingAngleController.text.trim(),
+      'splitterAngle': splitterAngleController.text.trim(),
 
       'coldLF': coldLFController.text.trim(),
       'coldRF': coldRFController.text.trim(),
@@ -191,6 +165,21 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
     Navigator.pop(context);
   }
 
+  //helper method to build consistent numeric input fields
+  Widget _buildNumericField(TextEditingController controller, String label, {String suffix = ""}) {
+    return TextField(
+      controller: controller,
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      inputFormatters: [
+        FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+      ],
+      decoration: InputDecoration(
+        labelText: label,
+        suffixText: suffix, //Useful for showing degrees (°)
+        border: const OutlineInputBorder(),
+      ),
+    );
+  }
   @override
   Widget build(BuildContext context) {
     if (loading) {
@@ -302,48 +291,23 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
             const SizedBox(height: 16),
 
             //suspension settings
-            DropdownButtonFormField<suspension>(
-              value: suspensionController.selectedSus,
-              decoration: const InputDecoration(
-                labelText: "Suspension Type",
-                border: OutlineInputBorder(),
-              ),
-              items: suspension.values.map((type) {
-                return DropdownMenuItem(
-                  value: type,
-                  child: Text(type.label),
-                );
-              }).toList(),
-              onChanged: (value) {
-                if (value != null) {
-                  suspensionController.updateRole(value);  // update controller
-                  setState(() {});                         // refresh UI
-                }
-              },
-            ),
-            const SizedBox(height: 16),
+            // CHANGED: Replaced Suspension Dropdown with individual inputs
+            const Text("Suspension Settings", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 8),
+            _buildNumericField(compressionController, "Compression"),
+            const SizedBox(height: 12),
+            _buildNumericField(reboundController, "Rebound"),
+            const SizedBox(height: 12),
+            _buildNumericField(swayBarController, "Sway Bar"),
+            const SizedBox(height: 24),
 
-            //aero settings
-            DropdownButtonFormField<aero>(
-              value: aeroController.selectedAero,
-              decoration: const InputDecoration(
-                labelText: "Aero Type",
-                border: OutlineInputBorder(),
-              ),
-              items: aero.values.map((type) {
-                return DropdownMenuItem(
-                  value: type,
-                  child: Text(type.label),
-                );
-              }).toList(),
-              onChanged: (value) {
-                if (value != null) {
-                  aeroController.updateRole(value);
-                  setState(() {});
-                }
-              },
-            ),
-            const SizedBox(height: 16),
+            // CHANGED: Replaced Aero Dropdown with individual inputs
+            const Text("Aero Settings", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 8),
+            _buildNumericField(wingAngleController, "Wing Angle", suffix: "°"),
+            const SizedBox(height: 12),
+            _buildNumericField(splitterAngleController, "Splitter Angle", suffix: "°"),
+            const SizedBox(height: 24),
 
             //tire psi
             Text("Cold Tire PSI", style: TextStyle(fontSize: 18)),
