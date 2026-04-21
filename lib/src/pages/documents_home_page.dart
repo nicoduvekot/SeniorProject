@@ -17,8 +17,9 @@ class DocumentsHomePage extends StatelessWidget {
       return DocumentStatus.syncing;
     }
 
+    //Data that must be there for a complete document
     final hasName = data['name'] != null && data['name'].toString().isNotEmpty;
-    final hasContent = data['content'] != null && data['content'].toString().isNotEmpty;
+    final hasContent = data['track'] != null && data['track'].toString().isNotEmpty;
 
     final isComplete = hasName && hasContent;
 
