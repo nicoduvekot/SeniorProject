@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'create_account_page.dart';
+import '../widgets/app_alert.dart';
 
 class SignInPage extends StatefulWidget {
   const SignInPage({super.key});
@@ -33,9 +34,10 @@ class _SignInPageState extends State<SignInPage> {
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    AppAlert.showConfirm(
+        context,
+        message,
+        title: "Sign-In Error");
   }
 
   @override
