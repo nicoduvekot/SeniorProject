@@ -6,6 +6,7 @@ import '../models/document_status.dart';
 import '../services/document_service.dart';
 import '../widgets/create_document_dialog.dart';
 import 'document_editor_page.dart';
+import '../widgets/app_alert.dart';
 
 class DocumentsHomePage extends StatelessWidget {
   const DocumentsHomePage({super.key});
@@ -40,7 +41,15 @@ class DocumentsHomePage extends StatelessWidget {
             icon: const Icon(Icons.logout),
             tooltip: "Log out",
             onPressed: () async {
-              await FirebaseAuth.instance.signOut();
+              final shouldLogout = await AppAlert.showYesNoAlert(
+                  context,
+                  "Continue with log out?",
+                  yesText: "Yes",
+                  noText: "No",
+              );
+              if (shouldLogout) {
+                await FirebaseAuth.instance.signOut();
+              }
             },
           ),
         ],
