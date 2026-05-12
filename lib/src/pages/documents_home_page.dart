@@ -6,6 +6,7 @@ import '../models/document_status.dart';
 import '../services/document_service.dart';
 import '../widgets/create_document_dialog.dart';
 import 'document_editor_page.dart';
+import '../widgets/app_alert.dart';
 
 class DocumentsHomePage extends StatelessWidget {
   const DocumentsHomePage({super.key});
@@ -40,7 +41,15 @@ class DocumentsHomePage extends StatelessWidget {
             icon: const Icon(Icons.logout),
             tooltip: "Log out",
             onPressed: () async {
-              await FirebaseAuth.instance.signOut();
+              final shouldLogout = await AppAlert.showYesNoAlert(
+                  context,
+                  "Continue with log out?",
+                  yesText: "Yes",
+                  noText: "No",
+              );
+              if (shouldLogout) {
+                await FirebaseAuth.instance.signOut();
+              }
             },
           ),
         ],
@@ -76,7 +85,24 @@ class DocumentsHomePage extends StatelessWidget {
                 return ListTile(
                   leading: StatusIndicators(status: getStatusForDoc(d)),
                   title: Text(d['name']),
-                  trailing: const Icon(Icons.chevron_right),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    tooltip: "Delete document",
+                    onPressed: () async {
+                      final shouldDelete = await AppAlert.showYesNoAlert(
+                        context,
+                        "Deletion CANNOT be undone!",
+                        title: "Delete '${d['name']}'?",
+                        yesText: "Delete",
+                        noText: "Cancel",
+                        titleColor: Colors.red,
+                      );
+
+                      if (shouldDelete) {
+                        await d.reference.delete();
+                      }
+                    },
+                  ),
                   onTap: () {
                     Navigator.push(
                       context,
