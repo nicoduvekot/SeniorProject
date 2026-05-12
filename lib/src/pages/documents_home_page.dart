@@ -85,7 +85,24 @@ class DocumentsHomePage extends StatelessWidget {
                 return ListTile(
                   leading: StatusIndicators(status: getStatusForDoc(d)),
                   title: Text(d['name']),
-                  trailing: const Icon(Icons.chevron_right),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    tooltip: "Delete document",
+                    onPressed: () async {
+                      final shouldDelete = await AppAlert.showYesNoAlert(
+                        context,
+                        "Deletion CANNOT be undone!",
+                        title: "Delete '${d['name']}'?",
+                        yesText: "Delete",
+                        noText: "Cancel",
+                        titleColor: Colors.red,
+                      );
+
+                      if (shouldDelete) {
+                        await d.reference.delete();
+                      }
+                    },
+                  ),
                   onTap: () {
                     Navigator.push(
                       context,
