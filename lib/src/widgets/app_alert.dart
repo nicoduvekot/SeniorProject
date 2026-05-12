@@ -29,6 +29,7 @@ class AppAlert {
         String title = "Confirm",
         String yesText = "Yes",
         String noText = "No",
+        Color titleColor = Colors.black,
   }) async {
     final result = await showDialog<bool>(
       context: context,
@@ -36,6 +37,7 @@ class AppAlert {
       builder: (_) => _AlertBase(
         title: title,
         message: message,
+        titleColor: titleColor,
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -56,11 +58,13 @@ class _AlertBase extends StatelessWidget {
   final String title;
   final String message;
   final List<Widget> actions;
+  final Color titleColor; // allow caller to change color of title text
 
   const _AlertBase({
     required this.title,
     required this.message,
     required this.actions,
+    this.titleColor = Colors.black,
   });
 
   @override
@@ -77,9 +81,10 @@ class _AlertBase extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
+                  color: titleColor,
                 )),
               const SizedBox(height: 12),
               Text(
