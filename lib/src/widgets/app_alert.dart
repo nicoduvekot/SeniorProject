@@ -89,7 +89,9 @@ class _AlertBase extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+                mainAxisAlignment: actions.length == 1
+                    ? MainAxisAlignment.center
+                    : MainAxisAlignment.spaceBetween,
                 children: actions,
               )
             ],
