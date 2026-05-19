@@ -53,6 +53,35 @@ class DocumentsHomePage extends StatelessWidget {
             },
           ),
         ],
+
+        // The addition for the search bar functionality
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(50.0),
+          child: Container(
+            alignment: Alignment.centerLeft,
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: SearchAnchor(
+              builder: (BuildContext context, SearchController controller) {
+                return SearchBar(
+                  controller: controller,
+                  padding: const WidgetStatePropertyAll<EdgeInsets>(
+                    EdgeInsets.symmetric(horizontal: 16.0),
+                  ),
+                  onTap: () { controller.openView(); },
+                  onChanged: (_) { controller.openView(); },
+                  leading: const Icon(Icons.search),
+                );
+              },
+              suggestionsBuilder: (BuildContext context, SearchController controller) {
+                return List<ListTile>.generate(5, (int index) {
+                  return ListTile(
+
+                  );
+                });
+              },
+            ),
+          ),
+        ),
       ),
 
       floatingActionButton: FloatingActionButton(
