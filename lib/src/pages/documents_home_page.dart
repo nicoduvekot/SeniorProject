@@ -8,6 +8,12 @@ import '../widgets/create_document_dialog.dart';
 import 'document_editor_page.dart';
 import '../widgets/app_alert.dart';
 
+// Used for assigning an object for search functionality
+class MyObject {
+  final String name;
+  MyObject(this.name);
+}
+
 class DocumentsHomePage extends StatelessWidget {
   const DocumentsHomePage({super.key});
 
@@ -73,11 +79,57 @@ class DocumentsHomePage extends StatelessWidget {
                 );
               },
               suggestionsBuilder: (BuildContext context, SearchController controller) {
-                return List<ListTile>.generate(5, (int index) {
-                  return ListTile(
+                return [
+                  StreamBuilder<List<QueryDocumentSnapshot>>(
+                    stream: service.userDocumentsStream(),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData) {
+                        return const SizedBox.shrink();
+                      }
 
-                  );
-                });
+                      final docs = snapshot.data!;
+                      final query = controller.text.toLowerCase();
+
+                      final filtered = docs.where((doc) {
+                        final data = doc.data() as Map<String, dynamic>;
+                        final queryLower = query.toLowerCase();
+
+                        final fields = [
+                          data['name'],
+                          data['notes'],
+                          data['track'],
+                          data['car'],
+                          data['weather'],
+                          data['driver'],
+                          data['suspension'],
+                          data['aero'],
+                        ];
+
+                        return fields.any((value) =>
+                            (value ?? '').toString().toLowerCase().contains(queryLower));
+                      }).toList();
+
+                      return Column(
+                        children: filtered.map((doc) {
+                          return ListTile(
+                            title: Text(doc['name']),
+                            onTap: () {
+                              controller.closeView(doc['name']); // fills the search bar
+
+                              // This allows for selecting the doc to see the editor
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => DocumentEditorPage(docRef: doc.reference),
+                                ),
+                              );
+                            },
+                          );
+                        }).toList(),
+                      );
+                    },
+                  )
+                ];
               },
             ),
           ),
