@@ -14,8 +14,6 @@ class MyObject {
   MyObject(this.name);
 }
 
-class DocumentsHomePage extends StatelessWidget {
-  const DocumentsHomePage({super.key});
 // Holds the current filter state. All fields are optional — null means "no filter"
 class _LogFilter {
   final String? track;
